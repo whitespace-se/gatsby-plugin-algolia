@@ -54,7 +54,7 @@ function fetchExistingObjects(index, reporter, cache) {
           batch: batch => {
             if (Array.isArray(batch)) {
               batch.forEach(hit => {
-                if (hit.internal?.contentDigest) {
+                if (hit.internal && hit.internal.contentDigest) {
                   hits[hit.objectID] = hit;
                 }
               });
@@ -234,7 +234,11 @@ async function runIndexQueries(
     Object.fromEntries(
       Object.entries(allObjectsMap).map(([objectID, object]) => [
         objectID,
-        { internal: { contentDigest: object.internal?.contentDigest } },
+        {
+          internal: {
+            contentDigest: object.internal && object.internal.contentDigest,
+          },
+        },
       ])
     )
   );
@@ -260,7 +264,7 @@ async function runIndexQueries(
       if (queryResultsMap.hasOwnProperty(id)) {
         // key matches fresh objects, so compare match fields
         const newObj = queryResultsMap[id];
-        if (!newObj.internal?.contentDigest) {
+        if (!newObj.internal && newObj.internal.contentDigest) {
           reporter.panicOnBuild(
             'the objects must have internal.contentDigest. Current object:\n' +
               JSON.stringify(newObj, null, 2)
@@ -268,7 +272,8 @@ async function runIndexQueries(
         }
 
         if (
-          existingObj.internal?.contentDigest !== newObj.internal.contentDigest
+          existingObj.internal &&
+          existingObj.internal.contentDigest !== newObj.internal.contentDigest
         ) {
           // contentDigest differs, so index new object
           toIndex[id] = newObj;
@@ -283,7 +288,8 @@ async function runIndexQueries(
           // not in any query
           !allObjectsMap.hasOwnProperty(id) &&
           // managed by this plugin
-          existingObj.internal?.contentDigest
+          existingObj.internal &&
+          existingObj.internal.contentDigest
         ) {
           toRemove[id] = true;
         }
